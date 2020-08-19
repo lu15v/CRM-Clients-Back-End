@@ -1,0 +1,18 @@
+{
+  "name": "crm-clients",
+  "version": "1.0.0",
+  "description": "CRM Clients developed with GraphQL and React",
+  "main": "index.js",
+  "scripts": {
+    "start": "node .",
+    "dev": "nodemon ."
+  },
+  "author": "Luis Ballinas",
+  "license": "ISC",
+  "dependencies": {
+    "apollo-server": "^2.16.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.4"
+  }
+}
