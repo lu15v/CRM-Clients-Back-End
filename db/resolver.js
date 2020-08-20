@@ -1,6 +1,7 @@
 //Resolver
 const resolvers  = {
     Query: {
+        getCourse: () => "something"
     }
 }
 
