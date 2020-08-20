@@ -13,7 +13,11 @@ const createToken = (user, secret, exp) => {
 //Resolver
 const resolvers  = {
     Query: {
-        getCourse: () => "something"
+        getUser: async (_,{token}) => {
+            const userId = await jwt.verify(token, process.env.SECRET);
+
+            return userId;
+        }
     },
     Mutation :{
         newUser: async (_, {input}) => {
