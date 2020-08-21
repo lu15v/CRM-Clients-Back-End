@@ -14,10 +14,30 @@ const createToken = (user, secret, exp) => {
 //Resolver
 const resolvers  = {
     Query: {
+        //Users
         getUser: async (_,{token}) => {
             const userId = await jwt.verify(token, process.env.SECRET);
 
             return userId;
+        },
+
+        //Products
+        getProducts: async () => {
+            try{
+                const products = await Product.find({});
+                return products
+            }
+            catch(error){
+                console.log(error);
+            }
+        },
+        getProduct: async (_,{id}) => {
+            const productExists = await Product.findById(id);
+
+            if(!productExists){
+                throw new Error(`Product with id ${id} not found`)
+            }
+            return productExists
         }
     },
     Mutation :{
@@ -71,6 +91,27 @@ const resolvers  = {
             catch(error){
                 console.log(error);
             }
+        },
+        updateProduct: async  (_, {id, input}) => {
+            let productExists = await Product.findById(id);
+
+            if(!productExists){
+                throw new Error(`Product with id ${id} not found`)
+            }
+
+            productExists = await Product.findOneAndUpdate({_id : id}, input, {new: true, useFindAndModify: false});
+            
+            return productExists;
+        },
+        deleteProduct: async  (_, {id}) => {
+            const productExists = await Product.findById(id);
+
+            if(!productExists){
+                throw new Error(`Product with id ${id} not found`)
+            }
+            await Product.findOneAndDelete({_id : id});
+
+            return `Product ${id} eliminated`;
         }
     }
 }
