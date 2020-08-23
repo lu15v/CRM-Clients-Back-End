@@ -47,6 +47,25 @@ const resolvers  = {
             }catch(error){
                 console.log(error);
             }
+        },
+        getClientsVendor: async (_, {}, ctx) =>{
+            try{
+                const clients = Client.find({vendor: ctx.user.id.toString()});
+                return clients;
+            }catch(error){
+                console.log(error);
+            }
+        },
+        getClient: async (_,{id}, ctx) => {
+            const clientExists = await Client.findById(id);
+
+            if(!clientExists) throw new Error(`Client with ID: ${id} does not exists`);
+
+            if(clientExists.vendor.toString() !== ctx.user.id){
+                throw new Error(`You are not authorized to see this client`);
+            }
+
+            return clientExists;
         }
     },
     Mutation :{
