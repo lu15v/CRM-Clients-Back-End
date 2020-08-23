@@ -39,6 +39,14 @@ const resolvers  = {
                 throw new Error(`Product with id ${id} not found`)
             }
             return productExists
+        },
+        getClients: async () => {
+            try{
+                const clients = Client.find({});
+                return clients;
+            }catch(error){
+                console.log(error);
+            }
         }
     },
     Mutation :{
