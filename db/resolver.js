@@ -155,6 +155,33 @@ const resolvers  = {
             } catch(error){
                 console.log(error);
             }
+        },
+        updateClient: async (_, {id, input}, ctx) => {
+            let clientExists = await Client.findById(id);
+            if(!clientExists) throw new Error(`Client with id ${id} does not exists`);
+
+            if(clientExists.vendor.toString() !== ctx.user.id) throw new Error(`You are not authorized for updating this client`);
+
+            try{
+                clientExists =  await Client.findOneAndUpdate({_id: id}, input, {new: true,useFindAndModify: false});
+                clientExists.save();
+                return clientExists;
+            }catch(error){
+                console.log(error)
+            }
+        },
+        deleteClient: async (_, {id}, ctx) => {
+            let clientExists = await Client.findById(id);
+            if(!clientExists) throw new Error(`Client with id ${id} does not exists`);
+
+            if(clientExists.vendor.toString() !== ctx.user.id) throw new Error(`You are not authorized for deleting this client`);
+
+            try{
+                await Client.findOneAndDelete({_id: id});
+                return "Client deleted successfully";
+            } catch(error){
+                console.log(error);
+            }
         }
     }
 }
