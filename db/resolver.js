@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const Client = require('../models/Client');
 const Product = require('../models/Product');
+const Order = require('../models/Order');
 const bcryptjs = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
@@ -66,6 +67,38 @@ const resolvers  = {
             }
 
             return clientExists;
+        },
+        getOrders: async () =>{
+            try{
+                const orders = await Order.find({});
+                return orders;
+            }catch(error){
+                console.log(error);
+            }
+        },
+        getOrdersVendor: async (_,{}, ctx) => {
+            try{
+                const orders = await Order.find({vendor: ctx.user.id});
+                return orders;
+            }catch(error){
+                console.log(error);
+            }
+        },
+        getOrder: async(_, {id}, ctx) =>{
+            const orderExists = await Order.findById(id);
+            if(!orderExists) throw new Error(`The order with the id: ${id} does not exists`);
+            if(orderExists.vendor.toString() !== ctx.user.id) throw new Error(`You don't have permissions to see this order`);
+
+            return orderExists;
+
+        },
+        getOrderByState: async(_, {state}, ctx) =>{
+            try{
+                const orders = await Order.find({vendor: ctx.user.id, state})
+                return orders;
+            }catch(error){
+                console.log(error);
+            }
         }
     },
     Mutation :{
@@ -179,6 +212,78 @@ const resolvers  = {
             try{
                 await Client.findOneAndDelete({_id: id});
                 return "Client deleted successfully";
+            } catch(error){
+                console.log(error);
+            }
+        },
+        newOrder: async (_, {input}, ctx) =>{
+            const {order, client} = input;
+
+            //Check if client exists
+            let clientExists = await Client.findById(client);
+            if(!clientExists) throw new Error(`Client with id ${client} does not exists`);
+
+            //Check if client belongs to logged vendor
+            if(clientExists.vendor.toString() !== ctx.user.id) throw new Error(`You are not authorized to asign an order to this client`);
+
+            //let total  = 0;
+            //Check stock
+           for await (const article of order){
+                const {id} = article;
+                const product = await Product.findById(id);
+                if(article.quantity > product.stock){
+                    throw new Error(`The product '${product.name}' does not have the required stock (required: ${article.quantity}, stock:${product.stock})`)
+                }else{
+                    product.stock -= article.quantity;
+                    await product.save();
+                    //total += product.price;
+                }
+            }
+            //validation of the total, just for double security
+            //if(total !== input.total) show an error
+            //Create order
+            const newOrder = new Order(input);
+
+            //asign vendor
+            newOrder.vendor = ctx.user.id;
+
+            //Save order
+            const result = await newOrder.save();
+
+            return result;
+        },
+        updateOrder:async (_, {id, input}, ctx) =>{
+            console.log(id)
+            console.log(input)
+            const {order, client} = input;
+            const orderExists = await Order.findById(id);
+            const clientExists = await Client.findById(client);
+            console.log(orderExists.vendor)
+            if(!orderExists) throw new Error(`The order with the id: ${id} does not exists`);
+            if(orderExists.vendor.toString() !== ctx.user.id) throw new Error(`You don't have permissions to update this order`);
+            if(!clientExists) throw new Error(`The client with the id: ${id} does not exists`);
+            if(clientExists.vendor.toString() !== ctx.user.id) throw new Error(`You don't have permissions to update an order on this client ${client}`);
+
+            for await (const article of order){
+                const {id} = article;
+                const product = await Product.findById(id);
+                if(article.quantity > product.stock){
+                    throw new Error(`The product '${product.name}' does not have the required stock (required: ${article.quantity}, stock:${product.stock})`)
+                }else{
+                    product.stock -= article.quantity;
+                    await product.save();
+                    //total += product.price;
+                }
+            }
+            return await Order.findOneAndUpdate({_id: id}, input, {new: true});
+        },
+        deleteOrder: async (_, {id}, ctx) =>{
+            const orderExists = Order.findById(id);
+            if(!orderExists) throw new Error(`The order with the id: ${id} does not exists`);
+            if(orderExists.vendor.toString() !== ctx.user.id) throw new Error(`You don't have permissions to delete this order`);
+            try{
+                await Order.findOneAndDelete({_id: id});
+                return "Order deleted successfully";
             } catch(error){
                 console.log(error);
             }
