@@ -99,6 +99,59 @@ const resolvers  = {
             }catch(error){
                 console.log(error);
             }
+        },
+        bestClients: async () =>{
+            const clients = await Order.aggregate([
+                {$match: {state: "COMPLETED"}},
+                {$group :{
+                    _id : '$client',
+                    total: {$sum: '$total'}
+                }},
+                {
+                    $lookup: {
+                        from: 'clients',
+                        localField: '_id',
+                        foreignField: "_id",
+                        as: "client"
+                    }
+                },
+                {
+                    $sort: {total: -1}
+                },
+                {
+                    $limit: 10
+                }
+            ]);
+            return clients;
+        },
+        bestVendors: async () =>{
+            const vendors = await Order.aggregate([
+                {$match: {state: "COMPLETED"}},
+                {$group:{
+                    _id: "$vendor",
+                    total: {$sum: '$total'}
+                }},
+                {
+                    $lookup:{
+                        from: 'users',
+                        localField: '_id',
+                        foreignField: '_id',
+                        as: 'vendor'
+                    }
+                },
+                {
+                    $sort: {total: -1}
+                },
+                {
+                    $limit: 3
+                }
+            ]);
+            return vendors;
+        },
+        searchProduct: async(_,{text}) =>{
+            const products = await Product.find({$text: {$search: text} });
+
+            return products;
         }
     },
     Mutation :{
