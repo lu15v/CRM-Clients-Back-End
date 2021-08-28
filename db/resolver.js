@@ -17,10 +17,8 @@ const createToken = (user, secret, exp) => {
 const resolvers  = {
     Query: {
         //Users
-        getUser: async (_,{token}) => {
-            const userId = await jwt.verify(token, process.env.SECRET);
-
-            return userId;
+        getUser: async (_,{}, ctx) => {
+            return ctx.user;
         },
 
         //Products
@@ -228,6 +226,8 @@ const resolvers  = {
             return `Product ${id} eliminated`;
         },
         newClient: async (_, {input}, ctx) => {
+            console.log('new client')
+            console.log(input)
             const {email} = input;
             const clientExists = await Client.findOne({email});
             if(clientExists) throw new Error(`email ${email} already registered`);
